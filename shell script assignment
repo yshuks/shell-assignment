@@ -1,0 +1,93 @@
+#!/bin/bash
+#a script to edit sig.conf file according to user input
+
+echo "Please enter the relevant options to edit the sig.conf file.(CASE SENSITIVE. ENTER IN CAPS)"
+
+#taking input from the user to identify the line to edit and then edit it
+echo  "Enter your component name from the following: "
+echo "  INGESTOR"
+echo "  JOINER"
+echo "  WRANGLER"
+echo "  VALIDATOR"
+read COMPNAM
+if [[ $COMPNAM == "INGESTOR" || $COMPNAM == "JOINER" || $COMPNAM == "WRANGLER" || $COMPNAM == "VALIDATOR" ]]
+   then
+        echo "Component name entered is : " $COMPNAM
+else
+	echo "Please enter valid input"
+	exit
+fi
+
+echo "Enter the scale from the following: "
+echo "  MID"
+echo "  HIGH"
+echo "  LOW"
+
+read SCALE
+if  [[ $SCALE == "HIGH" || $SCALE == "MID" || $SCALE == "LOW"  ]]
+   then
+        echo "Scale entered is : " $SCALE
+else
+       echo "Please enter valid input"
+	exit
+fi
+
+echo "Enter your view from the following: "
+echo "  AUCTION"
+echo "  BID"
+read VIEW
+if  [[ $VIEW == "BID" || $VIEW == "AUCTION"  ]]
+   then
+        echo "View entered is :  " $VIEW
+else
+        echo "Please enter valid input"
+	exit
+fi
+
+if [[ $VIEW == "AUCTION" ]]
+   then
+        VIEW="vdopiasample"
+else
+        VIEW="vdopiasample-bid"
+fi
+
+echo "Enter your count between 0 to 9"
+read COUNT
+if  [[ "$COUNT" == [0-9] ]]
+   then
+       	echo "Count entered is: " $COUNT
+	
+else
+        echo "Please enter valid input"
+	exit
+fi
+
+#creating a file TEMP
+
+> TEMP
+
+#setting ERROR to 1 for flagging error
+ERROR=1
+
+#reading the file sig.conf to check which line has to be edited and the substituting
+# the value of count and scale according to user input and appending in the TEMP file
+
+for line in $(cat sig.conf) 
+   do
+	if [[ $(echo $line | awk -F';' '{print $1}') == "$VIEW" && $(echo $line | awk -F';' '{print $3}') == "$COMPNAM" ]]
+   then
+	echo "$line" | sed  "s/HIGH/$SCALE/; s/MID/$SCALE/; s/LOW/$SCALE/; s/[0-9]/$COUNT/;" >> TEMP
+	ERROR=0
+	else 
+		echo "$line" >> TEMP
+	fi
+done
+
+if [[ $ERROR == 1 ]]
+   then
+	echo "Error: Input not found"
+	exit
+fi
+
+#renaming TEMP
+mv TEMP sig.conf
